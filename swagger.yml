@@ -1,0 +1,180 @@
+consumes:
+- application/json
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
+info:
+  description: Trip Finalisation Review Bot
+  title: trf-microservice-golang-frb
+  license:
+    name: Copyright Transurban Pty. Ltd.
+    url: https://www.transurban.com/
+  version: '{{.Version}}'
+host: localhost:8080
+basePath: /
+paths:
+  /frb/config:
+    get:
+      security:
+      - oauth2: []
+      description: Returns the current cached configuration
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Returns the current cached configuration
+      operationId: getConfig
+      responses:
+        "200":
+          description: Successfully returns the current configuration
+          schema:
+            type: object
+            $ref: '#/definitions/Config'
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+            $ref: '#/definitions/AuthError'
+        "403":
+          description: Forbidden
+          schema:
+            type: object
+            $ref: '#/definitions/AuthError'
+        "500":
+          description: Server Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+  /frb/health:
+    get:
+      security:
+      - oauth2: []
+      description: Returns a payload containing the health of the service, used by
+        ECS
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      summary: Returns service health status
+      operationId: getHealth
+      responses:
+        "200":
+          description: Successfully returns app information when service is up
+          schema:
+            type: object
+            $ref: '#/definitions/HealthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+            $ref: '#/definitions/AuthError'
+        "403":
+          description: Forbidden
+          schema:
+            type: object
+            $ref: '#/definitions/AuthError'
+        "500":
+          description: Server Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+definitions:
+  AuthError:
+    type: object
+    required:
+    - message
+    properties:
+      message:
+        type: string
+  Config:
+    type: object
+    required:
+    - queues
+    properties:
+      queues:
+        type: array
+        items:
+          $ref: '#/definitions/ConfigQueue'
+  ConfigParameter:
+    type: object
+    required:
+    - key
+    - value
+    properties:
+      key:
+        description: The key of the paraemter to be used by FRB to perform an action
+        type: string
+      value:
+        description: The value of the paraemter to be used by FRB to perform an action
+        type: string
+  ConfigQueue:
+    type: object
+    required:
+    - name
+    - action
+    properties:
+      action:
+        description: The action FRB should perform on all items in the queue
+        type: string
+        enum:
+        - MODIFY
+        - CODEOFF
+        - NOCHANGE
+      end_time:
+        description: The time FRB should stop actioning the queue
+        type: string
+        format: date-time
+      name:
+        description: The name of the queue that FRB needs to look at
+        type: string
+      parameters:
+        description: The parameters to be used by FRB to perform an action
+        type: array
+        items:
+          $ref: '#/definitions/ConfigParameter'
+      start_time:
+        description: The time FRB should start actioning the queue
+        type: string
+        format: date-time
+  Error:
+    type: object
+    required:
+    - code
+    - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+  HealthResponse:
+    type: object
+    required:
+    - status
+    properties:
+      status:
+        description: The status of the application
+        type: string
+      timestamp:
+        description: The current time
+        type: string
+      version:
+        description: The application version
+        type: string
+securityDefinitions:
+  oauth2:
+    description: OAuth 2.0 with Client Credentials Grant type
+    type: oauth2
+    flow: application
+    tokenUrl: https://nbos-demoasset-dev-0.auth.us-west-2.amazoncognito.com/oauth2/token
+    scopes:
+      trf-dev-1/m2m:external: M2M for external parties adjudicating trips in TRF in
+        DEV-1
+      trf-dev-2/m2m:external: M2M for external parties adjudicating trips in TRF in
+        DEV-2
+      trf-tst-1/m2m:external: M2M for external parties adjudicating trips in TRF in
+        TST-1
+      trf-tst-2/m2m:external: M2M for external parties adjudicating trips in TRF in
+        TST-2
